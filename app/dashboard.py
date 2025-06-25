@@ -1,3 +1,5 @@
+import requests
+import os
 import streamlit as st
 import pandas as pd
 from storage import get_all_products, add_product, update_product, delete_product, get_all_prices, clear_prices
@@ -79,9 +81,9 @@ with tab2:
     st.divider()
     if st.button("Scrape all products now"):
         with st.spinner("Scraping in progress..."):
-            scrape_results = scrape_all_products()
+            resp = requests.post(f"{os.getenv('API_URL')}/scrape")
         st.success("Scraping completed!")
-        for r in scrape_results:
+        for r in resp.json().get("results", []):
             st.write(f"Product: {r['title']} | Price: {r['price']} | Status: {r['status']}")
     
     st.divider()

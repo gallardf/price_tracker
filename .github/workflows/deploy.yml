@@ -22,12 +22,19 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image Dashboard
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/price-tracker-dashboard:latest
+
+      - name: Build and push Docker image API
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/price-tracker-api:latest
 
   deploy:
     needs: build-and-push
@@ -42,7 +49,12 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/price-tracker-dashboard:latest
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/price-tracker-api:latest
+
+            docker stop price-tracker-api || true
             docker stop price-tracker-dashboard || true
+
+            docker rm price-tracker-api || true
             docker rm price-tracker-dashboard || true
             docker run -d \
               --name price-tracker-dashboard \
@@ -51,5 +63,16 @@ jobs:
               -e AWS_DEFAULT_REGION=eu-west-3 \
               -e DB_HOST=${{ secrets.DB_HOST }} \
               -e DB_NAME=db-prices \
+              -e API_URL=http://localhost:8000 \
               -p 8501:8501 \
               ${{ secrets.DOCKERHUB_USERNAME }}/price-tracker-dashboard:latest
+
+            docker run -d \
+              --name price-tracker-api \
+              -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
+              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+              -e AWS_DEFAULT_REGION=eu-west-3 \
+              -e DB_HOST=${{ secrets.DB_HOST }} \
+              -e DB_NAME=db-prices \
+              -p 8000:8000 \
+              ${{ secrets.DOCKERHUB_USERNAME }}/price-tracker-api:latest
