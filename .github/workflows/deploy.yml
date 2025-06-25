@@ -50,6 +50,6 @@ jobs:
               -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
               -e AWS_DEFAULT_REGION=eu-west-3 \
               -e DB_HOST=${{ secrets.DB_HOST }} \
-              -e DB_NAME=db-prices
+              -e DB_NAME=db-prices \
               -p 8501:8501 \
               ${{ secrets.DOCKERHUB_USERNAME }}/price-tracker-dashboard:latest
