@@ -43,38 +43,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: SSH to EC2 and deploy
+      - name: SSH to EC2 and deploy via docker-compose
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/price-tracker-dashboard:latest
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/price-tracker-api:latest
+            cd ~/price-tracker
 
-            docker stop price-tracker-api || true
-            docker stop price-tracker-dashboard || true
+            echo "🟢 Generating .env file"
+            cat > .env <<EOF
+            DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_NAME=db-prices
+            AWS_DEFAULT_REGION=eu-west-3
+            EOF
 
-            docker rm price-tracker-api || true
-            docker rm price-tracker-dashboard || true
-            docker run -d \
-              --name price-tracker-dashboard \
-              -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
-              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              -e AWS_DEFAULT_REGION=eu-west-3 \
-              -e DB_HOST=${{ secrets.DB_HOST }} \
-              -e DB_NAME=db-prices \
-              -e API_URL=http://localhost:8000 \
-              -p 8501:8501 \
-              ${{ secrets.DOCKERHUB_USERNAME }}/price-tracker-dashboard:latest
+            echo "🟢 Pulling latest Docker images"
+            docker compose pull
 
-            docker run -d \
-              --name price-tracker-api \
-              -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
-              -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-              -e AWS_DEFAULT_REGION=eu-west-3 \
-              -e DB_HOST=${{ secrets.DB_HOST }} \
-              -e DB_NAME=db-prices \
-              -p 8000:8000 \
-              ${{ secrets.DOCKERHUB_USERNAME }}/price-tracker-api:latest
+            echo "🟢 Starting containers with docker compose"
+            docker compose down || true
+            docker compose up -d --remove-orphans
+
+            echo "🟢 Containers running:"
+            docker compose ps
+            echo "🟢 Dashboard is available at http://${{ secrets.EC2_HOST }}:8501"
