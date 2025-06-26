@@ -69,11 +69,11 @@ with tab2:
                 if submit_update:
                     update_product(selected_product.id, edit_url, edit_title, edit_threshold)
                     st.success("Product updated!")
-                    st.experimental_rerun()
+                    st.rerun()
                 elif submit_delete:
                     delete_product(selected_product.id)
                     st.warning("Product deleted!")
-                    st.experimental_rerun()
+                    st.rerun()
     else:
         st.info("No products tracked yet. Add one above!")
 
@@ -90,4 +90,4 @@ with tab2:
     if st.button("Clear all price history", type="primary"):
         clear_prices()
         st.success("All price history has been deleted!")
-        st.experimental_rerun()  # To refresh the view immediately
+        st.rerun()  # To refresh the view immediately
