@@ -1,9 +1,39 @@
 version: '3.8'
 
 services:
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy
+    container_name: nginx-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ./vhost.d:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
+
+  letsencrypt:
+    image: nginxproxy/acme-companion
+    container_name: nginx-proxy-le
+    restart: always
+    depends_on:
+      - nginx-proxy
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+      - DEFAULT_EMAIL=florian.gallardo@email.com
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./certs:/etc/nginx/certs
+      - ./vhost.d:/etc/nginx/vhost.d
+      - ./html:/usr/share/nginx/html
+      - ./acme:/etc/acme.sh
+
   dashboard:
     image: ${DOCKERHUB_USERNAME}/price-tracker-dashboard:latest
     container_name: price-tracker-dashboard
+    restart: always
     ports:
       - "8501:8501"
     environment:
@@ -12,7 +42,10 @@ services:
       - DB_HOST=${DB_HOST}
       - DB_NAME=${DB_NAME}
       - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
-      - API_URL=http://price-tracker-api:8000
+      - API_URL=https://api-price-tracker.duckdns.org
+      - VIRTUAL_HOST=price-tracker.duckdns.org
+      - LETSENCRYPT_HOST=price-tracker.duckdns.org
+      - LETSENCRYPT_EMAIL=florian.gallardo@email.com
 
   price-tracker-api:
     image: ${DOCKERHUB_USERNAME}/price-tracker-api:latest
