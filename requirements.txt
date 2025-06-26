@@ -8,3 +8,4 @@ boto3
 psycopg2-binary
 fastapi
 uvicorn
+prometheus-client
