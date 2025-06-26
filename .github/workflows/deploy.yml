@@ -50,8 +50,8 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/price-tracker
-
+            cd ~/price_tracker
+            git pull
             echo "🟢 Generating .env file"
             cat > .env <<EOF
             DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
